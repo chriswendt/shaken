@@ -1,0 +1,49 @@
+Secure Handling of Asserted information using toKENs (SHAKEN)
+
+Status of this Memo     
+
+This memo provides information for the Internet community.  It does not specify an Internet standard of any kind.  Distribution of this memo is unlimited.
+
+Abstract
+
+This memo defines a mechanism and parameter addition to the P-Asserted-ID header in SIP for securing and validation of the telephone number specified. This specifically extends the current usage of PAI header in typical 3GPP/IMS and other SIP networks, and tries to extend the idea of  “trusted” domains to include a specific token parameter that can validate the SIP network that originated the call and the telephone number used.
+
+1. Introduction
+
+Along with the introduction of the P-Asserted-Identity header [RFC 3325] the idea of trusted domains and spec(T) concept was introduced in [RFC 3324].  While P-Asserted-Identity was adopted by carrier networks and used in 3GPP specifications among others, the follow through on the concept of better defining and enforcing spec(T) never happened.
+Through the evolution of SIP networks, particularly those associated with PSTN via direct interconnection and transit and wholesale relationships, and with the current issues with illegitimate caller-id spoofing, robo-calling and other less than desirable and/or illegal activities, the idea of trusted networks has both increased in relevance as well as become harder to strictly define in the varied and evolving interconnected world of SIP based PSTN services.
+The document proposes a simple parameter extension mechanism to the P-Asserted-Identity header applied at the originating service provider to help terminating SIP service providers validate the origination realm and identity of the calling party beyond a simple notion of trusted domains.
+
+2. Token Parameter for P-Asserted-Identity
+
+In order to extend the idea of assertion of identity in a trusted domain, where trusted domain may extend beyond the definition of trusted domain in [RFC3324] and [RFC3325], a token parameter should be used that provides cryptographic assertion of an identity and realm of origin.
+The token used should be of the form defined in [RFC7519] JSON Web Token (JWT) and [RFC7515] JSON Web Signature (JWS) with additional detail in [RFC7517] and [RFC7518].  An example of which would be:
+P-Asserted-Identity: <sip:+12155551212@tel.comcast.net>; token=eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1
+NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4M
+TkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19
+yb290Ijp0cnVlfQ.dBjftJeZ4CVPmB92K27uhbUJU1
+p1r_wW1gFWFOEjXk
+	As specified, JWT have the form header.claim.signature
+
+2.1 Token Header
+
+The token header is a JOSE header.  For the P-Asserted-Identity parameter token, an example of the header for the case of a symmetric key HMAC SHA-256 would be the following:
+	{“typ”:”JWT”,
+	 “alg”:”HS256”}
+This represents the fact that the encoded token is a JWT, and the JWT is a JWS using the HMAC SHA-256 algorithm.
+Other likely algorithms used for the PAI token parameter would include signatures using a X.509 certificate chain.
+This header is Base64url encoded per JWT specification.
+
+2.2 Token Claim
+
+The token claim should consist of the protected information.  For the PAI parameter token, the header MUST include the calling number and the realm of origin.  In addition, the claim should include a “jti” (JWT ID) for a unique identifier for the JWT.  The purpose of this “jti” claim is to prevent the JWT from being replayed.
+An example claim is as follows:
+	{ “pai”:”+12155551212”,
+	  “realm”:”tel.comcast.net”,
+	  “jti”:” 710b962e-041c-11e1-9234-0123456789ab” }
+“pai” is the caller-id in e.164 format
+“realm” is the domain associated with the originating SIP service provider
+“jti” is a UUID as defined in RFC4122
+
+2.3 Token Signature
+	
